@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router';
 import { useAuth } from '../context/AuthContext';
+import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface ProtectedRouteProps {
@@ -8,8 +9,18 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
+  const [gracePeriod, setGracePeriod] = useState(true);
 
-  if (isLoading) {
+  // Wait 2 seconds after mount before allowing redirects
+  // This gives Firebase time to restore auth state from persistence
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGracePeriod(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading || gracePeriod) {
     return (
       <div className="min-h-screen bg-[#faf9f7] flex items-center justify-center">
         <div className="flex items-center gap-3">
