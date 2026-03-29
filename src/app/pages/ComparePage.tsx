@@ -58,6 +58,9 @@ export function ComparePage() {
       console.log('Saving trip:', tripData);
       saveTrip(tripData);
     }
+    
+    // Navigate immediately to live tracking
+    navigate('/live-tracking');
   };
 
   const openInGoogleMaps = () => {
@@ -364,7 +367,6 @@ export function ComparePage() {
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSelectRoute(route);
-                            setTimeout(() => setShowPaymentModal(true), 100);
                           }}
                           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
                             selectedRoute?.id === route.id
@@ -373,7 +375,7 @@ export function ComparePage() {
                           }`}
                         >
                           <Navigation className="w-4 h-4" />
-                          {selectedRoute?.id === route.id ? 'Continue' : 'Book Now'}
+                          {selectedRoute?.id === route.id ? 'Starting...' : 'Start Navigation'}
                         </button>
                       </div>
                     </motion.div>

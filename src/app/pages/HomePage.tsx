@@ -98,6 +98,7 @@ export function HomePage() {
   const [editingSource, setEditingSource] = useState(true);
   const [sourceText, setSourceText] = useState('');
   const [sourceSuggestions, setSourceSuggestions] = useState<DestSuggestion[]>([]);
+  const sourceSuggestionsRef = useRef<DestSuggestion[]>([]);
   const [isSearchingSource, setIsSearchingSource] = useState(false);
   const [showSourceDrop, setShowSourceDrop] = useState(false);
 
@@ -171,7 +172,10 @@ export function HomePage() {
                 } else resolve(item);
               });
             })
-          )).then(resolved => setSourceSuggestions(resolved));
+          )).then(resolved => {
+            sourceSuggestionsRef.current = resolved;
+            setSourceSuggestions(resolved);
+          });
         } else setSourceSuggestions([]);
         setIsSearchingSource(false);
       });
@@ -251,9 +255,86 @@ export function HomePage() {
     setSelectedDest({ name: s.name, lat: s.lat, lng: s.lng, address: s.secondary });
     setDestText(s.name);
     setSuggestions([]);
+    setSuggestionsWithRef([]);
   }, []);
 
-  // ─── Voice Search ─────────────────────────────────────────
+  // Mock Mumbai locations for voice search fallback
+const MUMBAI_LOCATIONS: Record<string, { name: string; lat: number; lng: number; address: string }> = {
+  'thane': { name: 'Thane', lat: 19.2183, lng: 72.9781, address: 'Thane, Maharashtra' },
+  'bkc': { name: 'BKC', lat: 19.061, lng: 72.8667, address: 'Bandra Kurla Complex, Mumbai' },
+  'bandra': { name: 'Bandra', lat: 19.0596, lng: 72.8295, address: 'Bandra, Mumbai' },
+  'andheri': { name: 'Andheri', lat: 19.1136, lng: 72.8697, address: 'Andheri, Mumbai' },
+  'dadar': { name: 'Dadar', lat: 19.0178, lng: 72.8478, address: 'Dadar, Mumbai' },
+  'csmt': { name: 'CSMT', lat: 18.9398, lng: 72.8355, address: 'Chhatrapati Shivaji Maharaj Terminus, Mumbai' },
+  'churchgate': { name: 'Churchgate', lat: 18.9322, lng: 72.8265, address: 'Churchgate, Mumbai' },
+  'borivali': { name: 'Borivali', lat: 19.2317, lng: 72.8567, address: 'Borivali, Mumbai' },
+  'kandivali': { name: 'Kandivali', lat: 19.2045, lng: 72.8525, address: 'Kandivali, Mumbai' },
+  'malad': { name: 'Malad', lat: 19.1868, lng: 72.8483, address: 'Malad, Mumbai' },
+  'goregaon': { name: 'Goregaon', lat: 19.1663, lng: 72.8526, address: 'Goregaon, Mumbai' },
+  'jogeshwari': { name: 'Jogeshwari', lat: 19.1434, lng: 72.8325, address: 'Jogeshwari, Mumbai' },
+  'powai': { name: 'Powai', lat: 19.1176, lng: 72.9061, address: 'Powai, Mumbai' },
+  'vikhroli': { name: 'Vikhroli', lat: 19.1106, lng: 72.9256, address: 'Vikhroli, Mumbai' },
+  'ghatkopar': { name: 'Ghatkopar', lat: 19.0861, lng: 72.9098, address: 'Ghatkopar, Mumbai' },
+  'kurla': { name: 'Kurla', lat: 19.065, lng: 72.8782, address: 'Kurla, Mumbai' },
+  'sion': { name: 'Sion', lat: 19.0402, lng: 72.8614, address: 'Sion, Mumbai' },
+  'matunga': { name: 'Matunga', lat: 19.0278, lng: 72.8567, address: 'Matunga, Mumbai' },
+  'wadala': { name: 'Wadala', lat: 19.0164, lng: 72.8703, address: 'Wadala, Mumbai' },
+  'parel': { name: 'Parel', lat: 18.9989, lng: 72.8432, address: 'Parel, Mumbai' },
+  'lower parel': { name: 'Lower Parel', lat: 19.003, lng: 72.8285, address: 'Lower Parel, Mumbai' },
+  'worli': { name: 'Worli', lat: 19.0091, lng: 72.8153, address: 'Worli, Mumbai' },
+  'mahim': { name: 'Mahim', lat: 19.0454, lng: 72.8405, address: 'Mahim, Mumbai' },
+  'santacruz': { name: 'Santacruz', lat: 19.0834, lng: 72.8396, address: 'Santacruz, Mumbai' },
+  'vile parle': { name: 'Vile Parle', lat: 19.1009, lng: 72.8402, address: 'Vile Parle, Mumbai' },
+  'juhu': { name: 'Juhu', lat: 19.1025, lng: 72.8258, address: 'Juhu, Mumbai' },
+  'khar': { name: 'Khar', lat: 19.0683, lng: 72.8339, address: 'Khar, Mumbai' },
+  'khar road': { name: 'Khar Road', lat: 19.0683, lng: 72.8339, address: 'Khar Road, Mumbai' },
+  'dahisar': { name: 'Dahisar', lat: 19.2487, lng: 72.8543, address: 'Dahisar, Mumbai' },
+  'mira road': { name: 'Mira Road', lat: 19.2809, lng: 72.8562, address: 'Mira Road, Thane' },
+  'bhayandar': { name: 'Bhayandar', lat: 19.3017, lng: 72.8512, address: 'Bhayandar, Thane' },
+  'naigaon': { name: 'Naigaon', lat: 19.3345, lng: 72.8553, address: 'Naigaon, Palghar' },
+  'vasai': { name: 'Vasai', lat: 19.3897, lng: 72.8324, address: 'Vasai, Palghar' },
+  'virar': { name: 'Virar', lat: 19.4558, lng: 72.8114, address: 'Virar, Palghar' },
+  'nallasopara': { name: 'Nallasopara', lat: 19.4158, lng: 72.8264, address: 'Nallasopara, Palghar' },
+  'byculla': { name: 'Byculla', lat: 18.9777, lng: 72.8314, address: 'Byculla, Mumbai' },
+  'mazgaon': { name: 'Mazgaon', lat: 18.9653, lng: 72.8365, address: 'Mazgaon, Mumbai' },
+  'dockyard road': { name: 'Dockyard Road', lat: 18.9565, lng: 72.8412, address: 'Dockyard Road, Mumbai' },
+  'sandhurst road': { name: 'Sandhurst Road', lat: 18.9524, lng: 72.8489, address: 'Sandhurst Road, Mumbai' },
+  'masjid': { name: 'Masjid', lat: 18.9489, lng: 72.8396, address: 'Masjid, Mumbai' },
+  'crawford market': { name: 'Crawford Market', lat: 18.9477, lng: 72.8324, address: 'Crawford Market, Mumbai' },
+};
+  const parseVoiceCommand = (transcript: string): { origin?: string; destination?: string } => {
+    const text = transcript.toLowerCase().trim();
+    
+    // Patterns to detect origin and destination
+    const patterns = [
+      // "I am at [origin] go to [destination]"
+      { regex: /i am at (.+?) go (?:to )?(.+)/i, originIndex: 1, destIndex: 2 },
+      // "I am at [origin] to [destination]"
+      { regex: /i am at (.+?) to (.+)/i, originIndex: 1, destIndex: 2 },
+      // "from [origin] to [destination]"
+      { regex: /from (.+?) to (.+)/i, originIndex: 1, destIndex: 2 },
+      // "[origin] to [destination]"
+      { regex: /^(.+?) to (.+)$/i, originIndex: 1, destIndex: 2 },
+      // "go from [origin] to [destination]"
+      { regex: /go from (.+?) to (.+)/i, originIndex: 1, destIndex: 2 },
+      // "starting from [origin] go to [destination]"
+      { regex: /starting from (.+?) go (?:to )?(.+)/i, originIndex: 1, destIndex: 2 },
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern.regex);
+      if (match) {
+        const origin = match[pattern.originIndex]?.trim();
+        const destination = match[pattern.destIndex]?.trim();
+        if (origin && destination) {
+          return { origin, destination };
+        }
+      }
+    }
+    
+    // If no pattern matched, treat entire text as destination
+    return { destination: transcript.trim() };
+  };
   const startVoiceSearch = useCallback(() => {
     // Check for HTTPS or localhost
     const isSecureContext = window.isSecureContext;
@@ -301,20 +382,106 @@ export function HomePage() {
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
       setDestText(transcript);
+      
       if (event.results[0].isFinal) {
         setIsListening(false);
-        // Trigger search and auto-select after a delay
-        searchDest(transcript);
-        // Wait for suggestions to populate then auto-select first one
-        setTimeout(() => {
-          const currentSuggestions = suggestionsRef.current;
-          if (currentSuggestions.length > 0 && currentSuggestions[0].lat && currentSuggestions[0].lng) {
-            const first = currentSuggestions[0];
-            setSelectedDest({ name: first.name, lat: first.lat, lng: first.lng, address: first.secondary });
-            setDestText(first.name);
-            setSuggestionsWithRef([]);
+        
+        // Smart voice parsing - detect origin and destination
+        const parsed = parseVoiceCommand(transcript);
+        
+        if (parsed.origin && parsed.destination) {
+          // Both origin and destination detected
+          console.log('Voice parsed:', parsed);
+          
+          // Check mock data first for origin
+          const mockOrigin = MUMBAI_LOCATIONS[parsed.origin.toLowerCase()];
+          if (mockOrigin) {
+            setOrigin({ name: mockOrigin.name, lat: mockOrigin.lat, lng: mockOrigin.lng, address: mockOrigin.address });
+            setSourceText(mockOrigin.name);
+            setEditingSource(false);
+          } else {
+            // Search for origin via API
+            searchSource(parsed.origin);
+            setTimeout(() => {
+              const sourceSugs = sourceSuggestionsRef.current;
+              if (sourceSugs.length > 0) {
+                const firstSource = sourceSugs[0];
+                setOrigin({ name: firstSource.name, lat: firstSource.lat!, lng: firstSource.lng!, address: firstSource.secondary });
+                setSourceText(firstSource.name);
+                setEditingSource(false);
+              }
+            }, 1000);
           }
-        }, 1500);
+          
+          // Check mock data first for destination
+          setTimeout(() => {
+            const mockDest = MUMBAI_LOCATIONS[parsed.destination!.toLowerCase()];
+            if (mockDest) {
+              setSelectedDest({ name: mockDest.name, lat: mockDest.lat, lng: mockDest.lng, address: mockDest.address });
+              setDestText(mockDest.name);
+              setSuggestionsWithRef([]);
+              
+              // Auto-navigate to planner
+              setTimeout(() => {
+                const originToUse = mockOrigin || origin;
+                if (originToUse) {
+                  navigate('/planner', {
+                    state: { 
+                      origin: originToUse, 
+                      destination: { name: mockDest.name, lat: mockDest.lat, lng: mockDest.lng, address: mockDest.address }
+                    },
+                  });
+                }
+              }, 500);
+            } else {
+              // Fall back to API search
+              searchDest(parsed.destination!);
+              setTimeout(() => {
+                const destSugs = suggestionsRef.current;
+                if (destSugs.length > 0) {
+                  const firstDest = destSugs[0];
+                  setSelectedDest({ name: firstDest.name, lat: firstDest.lat!, lng: firstDest.lng!, address: firstDest.secondary });
+                  setDestText(firstDest.name);
+                  setSuggestionsWithRef([]);
+                  
+                  // Auto-navigate to planner
+                  setTimeout(() => {
+                    const originToUse = mockOrigin ? { name: mockOrigin.name, lat: mockOrigin.lat, lng: mockOrigin.lng, address: mockOrigin.address } : origin;
+                    if (originToUse) {
+                      navigate('/planner', {
+                        state: { 
+                          origin: originToUse, 
+                          destination: { name: firstDest.name, lat: firstDest.lat!, lng: firstDest.lng!, address: firstDest.secondary }
+                        },
+                      });
+                    }
+                  }, 500);
+                }
+              }, 1500);
+            }
+          }, mockOrigin ? 100 : 500);
+          
+        } else if (parsed.destination) {
+          // Only destination detected - check mock data first
+          const mockDest = MUMBAI_LOCATIONS[parsed.destination.toLowerCase()];
+          if (mockDest) {
+            setSelectedDest({ name: mockDest.name, lat: mockDest.lat, lng: mockDest.lng, address: mockDest.address });
+            setDestText(mockDest.name);
+            setSuggestionsWithRef([]);
+          } else {
+            // Fall back to API search
+            searchDest(parsed.destination);
+            setTimeout(() => {
+              const currentSuggestions = suggestionsRef.current;
+              if (currentSuggestions.length > 0 && currentSuggestions[0].lat && currentSuggestions[0].lng) {
+                const first = currentSuggestions[0];
+                setSelectedDest({ name: first.name, lat: first.lat, lng: first.lng, address: first.secondary });
+                setDestText(first.name);
+                setSuggestionsWithRef([]);
+              }
+            }, 1500);
+          }
+        }
       }
     };
     
