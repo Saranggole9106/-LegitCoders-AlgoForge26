@@ -34,18 +34,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [redirectChecked, setRedirectChecked] = useState(false);
 
   // Check for Google redirect result on mount
   useEffect(() => {
     getGoogleRedirectResult()
       .then((result) => {
         if (result?.user) {
-          // Google sign-in successful
           console.log('Google redirect sign-in successful');
         }
       })
       .catch((error) => {
         console.error('Google redirect error:', error.message);
+      })
+      .finally(() => {
+        setRedirectChecked(true);
       });
   }, []);
   // Listen for auth state changes
