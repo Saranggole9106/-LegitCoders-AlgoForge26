@@ -64,11 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null);
       }
-      setIsLoading(false);
+      // Only stop loading when both auth state is known AND redirect check is done
+      if (redirectChecked) {
+        setIsLoading(false);
+      }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [redirectChecked]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
