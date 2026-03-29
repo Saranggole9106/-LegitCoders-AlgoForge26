@@ -1,7 +1,6 @@
 import { Link, useLocation } from "react-router";
-import { MapPin, Menu, X, User, LogOut } from "lucide-react";
+import { MapPin, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
 
 const navLinks = [
   { to: "/", label: "Home" },
@@ -13,7 +12,6 @@ const navLinks = [
 
 export function Navbar() {
   const location = useLocation();
-  const { isAuthenticated, user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [scrollBlur, setScrollBlur] = useState(0);
@@ -69,38 +67,6 @@ export function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          {isAuthenticated ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-white/50 rounded-full pl-2 pr-4 py-1.5">
-                <div className="w-8 h-8 bg-[#1e3a5f] rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <span className="text-sm font-bold text-[#1a1a1a]">{user?.fullName || user?.email?.split('@')[0]}</span>
-              </div>
-              <button
-                onClick={logout}
-                className="p-2 hover:bg-red-50 rounded-full transition-colors text-red-500"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                to="/login"
-                className="px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest border-2 border-[#1e3a5f] text-[#1e3a5f] hover:bg-[#1e3a5f] hover:text-white transition-all"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="bg-[#1e3a5f] text-white px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:shadow-xl hover:scale-105 active:scale-[0.98] transition-all"
-              >
-                Sign Up
-              </Link>
-            </div>
-          )}
           <Link to="/compare"
             className="bg-[#b8954f] text-white px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest shadow-lg hover:shadow-xl hover:scale-105 active:scale-[0.98] transition-all">
             Start Journey
@@ -122,43 +88,6 @@ export function Navbar() {
               {label}
             </Link>
           ))}
-          
-          {/* Mobile Auth Buttons */}
-          {isAuthenticated ? (
-            <div className="border-t border-[#e8e4de] pt-4 mt-4">
-              <div className="flex items-center gap-2 px-6 py-3 mb-3">
-                <div className="w-10 h-10 bg-[#1e3a5f] rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-[#1a1a1a]">{user?.fullName || user?.email?.split('@')[0]}</p>
-                  <p className="text-xs text-[#6b6560]">{user?.email}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  logout();
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full block px-6 py-4 rounded-full text-center bg-red-50 text-red-600 font-black uppercase tracking-[0.2em] text-sm"
-              >
-                <LogOut className="w-5 h-5 inline mr-2" />
-                Logout
-              </button>
-            </div>
-          ) : (
-            <div className="border-t border-[#e8e4de] pt-4 mt-4 space-y-2">
-              <Link to="/login" onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 rounded-full text-center border-2 border-[#1e3a5f] text-[#1e3a5f] font-black uppercase tracking-[0.2em] text-sm">
-                Login
-              </Link>
-              <Link to="/signup" onClick={() => setMobileMenuOpen(false)}
-                className="block px-6 py-4 rounded-full text-center bg-[#1e3a5f] text-white font-black uppercase tracking-[0.2em] text-sm">
-                Sign Up
-              </Link>
-            </div>
-          )}
-          
           <Link to="/compare" onClick={() => setMobileMenuOpen(false)}
             className="block px-6 py-5 rounded-full text-center bg-[#b8954f] text-white font-black uppercase tracking-[0.2em] shadow-xl text-sm mt-4">
             Start Journey
