@@ -33,11 +33,11 @@ export function LoginPage() {
     
     try {
       const success = await loginWithGoogle();
-      if (success) {
-        navigate('/');
-      } else {
+      // For Google redirect, don't navigate - let auth state update and redirect will happen automatically
+      if (!success) {
         setLoginError('Google sign-in failed. Please try again.');
       }
+      // Note: For redirect-based auth, the page will reload and auth state will update
     } catch (error) {
       setLoginError('An error occurred with Google sign-in.');
     } finally {
